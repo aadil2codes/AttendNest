@@ -35,23 +35,30 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are an expert timetable parser. Your task is to analyze OCR text extracted from a timetable image or PDF and return a structured JSON array of all unique subjects.
+            content: `You are an expert timetable parser. Your task is to analyze OCR text extracted from a timetable image and reconstruct the grid structure to output a structured JSON array of all unique subjects.
+
+OCR TEXT STRUCTURE:
+The input text is extracted from a table with columns for days (e.g. Monday, Tuesday, Wednesday, Thursday, Friday) and rows for class timings (e.g., 10:00 - 11:00, 11:00 - 12:00).
+Because OCR reads left-to-right, a row of text will list the subjects for each day in order of the columns.
+For example, if the header is: "Monday Tuesday Wednesday Thursday Friday"
+And a row under the time "10:00 - 11:00" is: "Applied Chemistry Applied Maths Applied Physics Applied Chemistry Electrical Science"
+This means:
+- Monday (1) = Applied Chemistry
+- Tuesday (2) = Applied Maths
+- Wednesday (3) = Applied Physics
+- Thursday (4) = Applied Chemistry
+- Friday (5) = Electrical Science
+
+Use this column-matching rule to correctly align each subject with its day of the week!
 
 CRITICAL INSTRUCTIONS:
-1. GROUP BY SUBJECT: Each subject must appear EXACTLY ONCE in the returned list. Do not create separate entries for the same subject taught on different days.
-2. COMBINE DAYS AND TIMINGS: If a subject is taught multiple times a week (e.g. Applied Chemistry on Monday and Thursday), compile ALL those days into the "days" array, and map each day to its specific start and end time inside the "timings" object.
-3. ACCURATE DAY MAPPING:
-   - Monday = 1
-   - Tuesday = 2
-   - Wednesday = 3
-   - Thursday = 4
-   - Friday = 5
-   - Saturday = 6
-   - Sunday = 0
-4. TIME FORMATTING: Convert all start and end times to 24-hour HH:MM format (e.g., "1:30 PM" -> "13:30", "10:00 - 11:00" -> start "10:00", end "11:00").
+1. GROUP BY SUBJECT: Each subject must appear EXACTLY ONCE in the returned list.
+2. COMBINE DAYS AND TIMINGS: If a subject is taught multiple times a week (e.g. Applied Chemistry is taught Monday 10:00-11:00 and Thursday 10:00-11:00), compile both days into the "days" array: [1, 4], and map each day to its specific time inside the "timings" object.
+3. DAY MAPPING: Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0.
+4. TIME MAPPING: Timings should be in 24-hour HH:MM format (e.g. "12:30 - 1:30" -> start "12:30", end "13:30"; "1:30 - 2:30" -> start "13:30", end "14:30").
 5. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse based on text legibility.
 
-Return ONLY raw JSON matching this schema, without any markdown formatting or extra explanation:
+Return ONLY raw JSON matching this schema, without any markdown formatting or extra text:
 {
   "subjects": [
     {
