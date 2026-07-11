@@ -1293,9 +1293,15 @@ function parseAIResponse(rawText) {
   
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      console.error("Failed to parse cleaned JSON:", cleaned);
+      throw new Error(`JSON parse error. Raw response started with: "${rawText.substring(0, 200)}..."`);
+    }
   }
   
-  return JSON.parse(cleaned);
+  throw new Error(`No JSON braces found. Raw response started with: "${rawText.substring(0, 200)}..."`);
 }
 
 // Call NVIDIA chat completions API via Vercel Serverless Function

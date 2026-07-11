@@ -32,8 +32,11 @@ export default async function handler(req, res) {
         model: "meta/llama-3.2-11b-vision-instruct",
         messages: [
           {
-            role: "system",
-            content: `# ROLE
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `# ROLE
 
 You are AttendNest AI, a specialized College Timetable Parsing Assistant.
 
@@ -246,14 +249,26 @@ Return this exact schema:
       }
     }
   ]
-}`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Parse this timetable image and extract all subjects with their days and times in the requested JSON format."
+}
+
+--------------------------------------------------
+
+# FINAL CHECK
+
+Before returning the JSON verify:
+✓ Every subject appears only once.
+✓ Days are merged correctly.
+✓ Labs are separate.
+✓ No duplicate subjects exist.
+✓ Faculty names were ignored.
+✓ Room numbers were ignored.
+✓ Empty cells were ignored.
+✓ Lunch break was ignored.
+✓ JSON is valid.
+
+Return ONLY the JSON.
+
+Parse the uploaded timetable image and extract all subjects with their days and times in the requested JSON format.`
               },
               {
                 type: "image_url",
