@@ -854,45 +854,7 @@ async function registerBackgroundReminder() {
 }
 
 
-function openDeleteSubjectModal() {
-  if (!currentSubject) {
-    alert("Open a subject first to delete it.");
-    return;
-  }
-  document.getElementById("deleteSubjectModal").classList.remove("hidden");
-}
 
-
-function closeDeleteSubjectModal() {
-  document.getElementById("deleteSubjectModal").classList.add("hidden");
-}
-
-
-
-function deleteSubject() {
-  if (!currentSubject) return;
-
-  const subjectToDelete = currentSubject;
-
-  // 1) Remove from data
-  delete data.subjects[subjectToDelete];
-  saveData();
-
-  // 2) Close modal
-  closeDeleteSubjectModal();
-
-  // 3) Reset state
-  currentSubject = null;
-  selectedDate = null;
-
-  // 4) Go back to home screen
-  calendarScreen.classList.add("hidden");
-  subjectScreen.classList.remove("hidden");
-
-  // 5) Show today’s subjects again
-  viewMode = "today";
-  renderSubjects();
-}
 
 
 function migrateToDaysSystem() {
