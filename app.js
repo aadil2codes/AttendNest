@@ -1411,7 +1411,7 @@ function renderImportPreview() {
   }
 
   tempImportSubjects.forEach((sub, idx) => {
-    const isLowConfidence = sub.confidence !== undefined && sub.confidence < 0.7;
+    const isLowConfidence = sub.confidence !== undefined && (sub.confidence === "low" || sub.confidence < 0.7);
     const item = document.createElement("div");
     item.className = "preview-item" + (isLowConfidence ? " preview-low-confidence" : "");
 
