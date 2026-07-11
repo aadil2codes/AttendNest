@@ -809,29 +809,23 @@ registerBackgroundReminder();
 function initTheme() {
   const savedTheme = localStorage.getItem("theme") || "light";
   const body = document.body;
-  const toggleBtn = document.getElementById("themeToggleBtn");
   
   if (savedTheme === "dark") {
     body.classList.add("dark");
-    if (toggleBtn) toggleBtn.textContent = "☀️";
   } else {
     body.classList.remove("dark");
-    if (toggleBtn) toggleBtn.textContent = "🌙";
   }
 }
 
 function toggleTheme() {
   const body = document.body;
-  const toggleBtn = document.getElementById("themeToggleBtn");
   
   if (body.classList.contains("dark")) {
     body.classList.remove("dark");
     localStorage.setItem("theme", "light");
-    if (toggleBtn) toggleBtn.textContent = "🌙";
   } else {
     body.classList.add("dark");
     localStorage.setItem("theme", "dark");
-    if (toggleBtn) toggleBtn.textContent = "☀️";
   }
 }
 
