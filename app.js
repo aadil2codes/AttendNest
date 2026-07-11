@@ -1335,7 +1335,7 @@ async function startAIImport() {
   const file = fileInput && fileInput.files ? fileInput.files[0] : null;
 
   // HARDCODED NVIDIA API KEY (as requested by user)
-  const apiKey = "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"; 
+  const apiKey = "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"; 
 
   if (!file) {
     alert("Please select a file first.");

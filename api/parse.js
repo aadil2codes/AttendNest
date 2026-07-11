@@ -27,9 +27,9 @@ export default async function handler(req, res) {
     let payload = {};
 
     if (isImage) {
-      // Use Llama 3.2 90B Vision model (extremely high accuracy) to read the image directly
+      // Use Llama 3.2 11B Vision model to read the image directly
       payload = {
-        model: "meta/llama-3.2-90b-vision-instruct",
+        model: "meta/llama-3.2-11b-vision-instruct",
         messages: [
           {
             role: "system",
@@ -264,8 +264,8 @@ Return this exact schema:
             ]
           }
         ],
-        temperature: 0.1,
-        max_tokens: 2048,
+        temperature: 1.00,
+        max_tokens: 1024,
         response_format: { type: "json_object" }
       };
     } else {
