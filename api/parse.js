@@ -35,26 +35,23 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are an expert timetable parser. Your task is to analyze OCR text extracted from a timetable image and reconstruct the grid structure to output a structured JSON array of all unique subjects.
+            content: `You are an expert timetable parser. Your task is to analyze raw OCR text extracted from a timetable image or PDF and reconstruct the schedule grid to output a structured JSON object containing a scratchpad and all unique subjects.
 
-OCR TEXT STRUCTURE:
-The input text is extracted from a table with columns for days (e.g. Monday, Tuesday, Wednesday, Thursday, Friday) and rows for class timings (e.g., 10:00 - 11:00, 11:00 - 12:00).
-Because OCR reads left-to-right, a row of text will list the subjects for each day in order of the columns.
-For example, if the header is: "Monday Tuesday Wednesday Thursday Friday"
-Use this column-matching rule to correctly align each subject with its day of the week!
-
-Day mapping:
-Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0
+OCR TEXT CHARACTERISTICS:
+- Timetable text extracted via OCR can be noisy, contain typos, and be read in either horizontal rows OR vertical columns (or a mix of both).
+- You must search the text for day names (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) and time intervals (e.g. "10:00 - 11:00", "1:30 - 2:30").
+- Reconstruct the relationship between each subject, its day, and its time slot. For example, if "Applied Chemistry" is aligned with "Monday" and "10:00 - 11:00", it runs on Monday from 10:00 to 11:00.
 
 CRITICAL INSTRUCTIONS:
-1. STEP-BY-STEP REASONING: In the "scratchpad" field of the JSON, document your row-by-row extraction. Write down exactly what subject is in each column (1 to 5) for every time row.
+1. DETAILED SCRATCHPAD: In the "scratchpad" field of the JSON, document your analysis. First, list each day of the week found, and for each day, write down the chronological sequence of classes and timings. This helps you verify column vs row read direction before outputting the final JSON.
 2. GROUP BY SUBJECT: Each subject must appear EXACTLY ONCE in the returned "subjects" list.
-3. COMBINE DAYS AND TIMINGS: If a subject is taught multiple times a week, compile all those days into the "days" array: [1, 2, 3, 4, 5], and map each day to its specific start and end time inside the "timings" object in 24-hour HH:MM format.
-4. DO NOT SKIP COLUMNS: Count column positions carefully. If a subject appears twice in the same row, make sure to record it for both days!
+3. COMBINE DAYS AND TIMINGS: If a subject is taught multiple times a week, compile all those days into the "days" array: [1, 2, 3, 4, 5], and map each day to its specific start and end time inside the "timings" object in 24-hour HH:MM format (e.g., "1:30 PM" -> "13:30", "1:30 - 2:30" -> start "13:30", end "14:30").
+4. DAY MAPPING: Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0.
+5. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse.
 
 Return ONLY raw JSON matching this schema, without any markdown formatting or extra text:
 {
-  "scratchpad": "Row 1 (10:00 - 11:00): Column 1 is Applied Chemistry, Column 2 is Applied Maths, Column 3 is Applied Physics, Column 4 is Applied Chemistry, Column 5 is Electrical Science. Row 2 ...",
+  "scratchpad": "Analysis: Monday classes: 10-11 Applied Chemistry, 11-12 Engineering Graphics, 12:30-1:30 Electrical Science, 1:30-2:30 Applied Maths. Tuesday classes: 10-11 Applied Maths, 11-12 Electrical Science...",
   "subjects": [
     {
       "name": "Applied Chemistry",

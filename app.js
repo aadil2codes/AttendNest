@@ -1335,6 +1335,7 @@ async function startAIImport() {
       }
     }
 
+    console.log("Extracted Raw OCR Text:\n", extractedText);
     showImportLoading("Understanding timetable with AI...");
     let json;
     try {
