@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AttendNest - A Smart Attendance Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="title" content="AttendNest - Smart Attendance Tracker for Students">
+  <meta name="description" content="AttendNest helps college students track attendance, manage weekly timetable, and get smart reminders. A simple, offline-first PWA for students.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js");
+    });
+  }
+</script>
+
+<body>
+
+  <!-- ================= TOP BAR (HEADER & THEME TOGGLE) ================= -->
+  <div class="top-bar" style="margin-top: 10px; margin-bottom: 20px; padding: 0 8px;">
+    <h1 style="margin: 0; text-align: left; font-size: 1.6rem;">🗓️ AttendNest</h1>
+    <button id="themeToggleBtn" onclick="toggleTheme()" class="theme-toggle-btn" title="Toggle Dark/Light Mode">🌙</button>
+  </div>
+
+  <!-- ================= HOME / LANDING ================= -->
+  <div id="subject-screen">
+
+    <div class="add-subject">
+      <input type="text" id="newSubjectInput" placeholder="Enter subject name">
+      <button onclick="openAddSubjectModal()">Add Subject</button>
+    </div>
+
+     <div class="view-buttons">
+       <button id="btnTodayView" onclick="showTodaySubjects()" style="flex:1;">
+         📅 Today’s Classes
+       </button>
+       <button id="btnAllView" onclick="renderAllSubjects()" style="flex:1;">
+         📚 View All Subjects
+       </button>
+     </div>
+
+    <!-- ================= TARGET GOAL ================= -->
+    <div class="target-goal-container">
+      <span class="target-goal-label">🎯 Target Attendance:</span>
+      <div class="target-goal-input-wrapper">
+        <input type="number" id="targetGoalInput" min="50" max="100" value="75" onchange="updateTargetGoal(this.value)">
+        <span class="target-goal-percent">%</span>
+      </div>
+    </div>
+
+    <h2>Your Subjects</h2>
+    <div id="subjectList"></div>
+  </div>
+
+  <!-- ================= SUBJECT / CALENDAR ================= -->
+  <div id="calendar-screen" class="hidden">
+
+    <div id="reminderBanner" class="hidden"
+      style="background:#fef3c7; padding:10px; border-radius:8px;
+      margin:10px 0; color:#92400e; font-weight:500;">
+      🔔 You haven’t marked attendance for today.
+    </div>
+
+    <div class="calendar-header-actions">
+      <button onclick="goBack()" class="btn-secondary">⬅ Back</button>
+      <button class="btn-danger" onclick="openDeleteSubjectModal()">🗑 Delete Subject</button>
+    </div>
+
+    <h2 id="currentSubjectTitle" style="text-align: center; margin: 16px 0 8px 0;"></h2>
+
+    <div class="stats-container">
+      <div class="stat-card">
+        <span class="stat-value" id="attendedCount">0</span>
+        <span class="stat-label">Attended</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="totalCount">0</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="percentage">0%</span>
+        <span class="stat-label">Percent</span>
+      </div>
+    </div>
+
+    <!-- Bunk Calculator Card -->
+    <div id="bunkCalculatorCard" class="bunk-card hidden"></div>
+
+    <div id="monthControls">
+      <button onclick="prevMonth()">◀</button>
+      <span id="monthHeader"></span>
+      <button onclick="nextMonth()">▶</button>
+    </div>
+
+    <div id="calendar-container">
+      <div id="weekdays">
+        <div>Mon</div><div>Tue</div><div>Wed</div>
+        <div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+      </div>
+      <div id="calendar"></div>
+    </div>
+
+  </div>
+
+  <!-- ================= STATUS MODAL ================= -->
+  <div id="statusModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Select Status</h3>
+      <button class="btn present-btn" onclick="setStatus('present')">✅ Present</button>
+      <button class="btn absent-btn" onclick="setStatus('absent')">❌ Absent</button>
+      <button class="btn noclass-btn" onclick="setStatus('noclass')">🟦 No Class</button>
+      <button class="btn clear-btn" onclick="setStatus('clear')">⭕ Clear</button>
+      <br><br>
+      <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ================= ADD SUBJECT MODAL ================= -->
+  <div id="addSubjectModal" class="modal hidden">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+      <h3>Add Subject</h3>
+
+      <p>Select Class Days:</p>
+
+      <div id="multiDaySelector"
+        style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px;">
+        <button class="btn day-btn" data-day="1">Mon</button>
+        <button class="btn day-btn" data-day="2">Tue</button>
+        <button class="btn day-btn" data-day="3">Wed</button>
+        <button class="btn day-btn" data-day="4">Thu</button>
+        <button class="btn day-btn" data-day="5">Fri</button>
+        <button class="btn day-btn" data-day="6">Sat</button>
+        <button class="btn day-btn" data-day="0">Sun</button>
+      </div>
+
+      <!-- Container for dynamic time inputs -->
+      <div id="timingInputsContainer"></div>
+
+      <br>
+      <button class="btn present-btn" onclick="saveSelectedDays()">Save Days</button>
+      <button class="btn cancel-btn" onclick="closeAddSubjectModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ================= DELETE SUBJECT MODAL ================= -->
+  <div id="deleteSubjectModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Delete Subject?</h3>
+      <p>This will remove all attendance data for this subject.</p>
+      <button class="btn absent-btn" onclick="deleteSubject()">Yes, Delete</button>
+      <button class="btn cancel-btn" onclick="closeDeleteSubjectModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
