@@ -1358,6 +1358,8 @@ async function startAIImport() {
     return;
   }
 
+  let loadingInterval;
+
   try {
     const isPdf = file.name.toLowerCase().endsWith(".pdf");
     let payloadData = {};
@@ -1384,13 +1386,31 @@ async function startAIImport() {
       payloadData = { imageDataUrl: imageDataUrl, isImage: true };
     }
 
-    showImportLoading("Understanding timetable with AI Vision...");
+    // Set up rotating progress stages (at least 7 messages)
+    const progressStages = [
+      "Initializing import engine...",
+      "Reading document file...",
+      "Rendering visual columns and rows...",
+      "Analyzing timetable layout...",
+      "Extracting academic subjects...",
+      "Deduplicating class schedules...",
+      "Generating your smart preview..."
+    ];
+    let stageIdx = 0;
+    showImportLoading(progressStages[0]);
+    loadingInterval = setInterval(() => {
+      stageIdx = (stageIdx + 1) % progressStages.length;
+      document.getElementById("importProgressText").textContent = progressStages[stageIdx];
+    }, 1500);
+
     let json;
     try {
       json = await callNvidiaAI(payloadData, apiKey);
     } catch (err) {
       console.error(err);
       throw new Error("[NVIDIA AI Completion Stage Failed]: " + err.message);
+    } finally {
+      clearInterval(loadingInterval);
     }
 
     if (!json || !json.subjects || !Array.isArray(json.subjects)) {
@@ -1447,6 +1467,7 @@ async function startAIImport() {
     showImportPreviewView();
     renderImportPreview();
   } catch (error) {
+    if (loadingInterval) clearInterval(loadingInterval);
     alert("Failed to import timetable: " + error.message);
     showImportSetup();
   }
