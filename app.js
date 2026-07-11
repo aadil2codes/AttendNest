@@ -1397,12 +1397,50 @@ async function startAIImport() {
       throw new Error("AI returned invalid timetable structure.");
     }
 
-    // Initialize tempImportSubjects
-    tempImportSubjects = json.subjects.map(s => ({
-      name: s.name || "Unnamed Subject",
-      confidence: s.confidence !== undefined ? s.confidence : 1.0,
-      days: Array.isArray(s.days) ? s.days : [],
-      timings: s.timings || {},
+    // Group and merge duplicate subjects returned by the AI
+    const mergedMap = new Map();
+    
+    json.subjects.forEach(s => {
+      if (!s.name) return;
+      const cleanName = s.name.trim();
+      
+      if (!mergedMap.has(cleanName)) {
+        mergedMap.set(cleanName, {
+          name: cleanName,
+          confidence: s.confidence !== undefined ? s.confidence : "high",
+          days: Array.isArray(s.days) ? [...s.days] : [],
+          timings: s.timings ? { ...s.timings } : {}
+        });
+      } else {
+        const existing = mergedMap.get(cleanName);
+        
+        // Merge days
+        if (Array.isArray(s.days)) {
+          s.days.forEach(d => {
+            if (!existing.days.includes(d)) {
+              existing.days.push(d);
+            }
+          });
+        }
+        
+        // Merge timings
+        if (s.timings) {
+          existing.timings = { ...existing.timings, ...s.timings };
+        }
+        
+        // Keep "low" confidence if either is low
+        if (s.confidence === "low") {
+          existing.confidence = "low";
+        }
+      }
+    });
+    
+    // Initialize tempImportSubjects from merged map
+    tempImportSubjects = Array.from(mergedMap.values()).map(s => ({
+      name: s.name,
+      confidence: s.confidence,
+      days: s.days,
+      timings: s.timings,
       enabled: true
     }));
 
