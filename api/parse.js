@@ -33,7 +33,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are an expert timetable parser. Your task is to analyze the uploaded timetable image and return a structured JSON object containing a scratchpad and all unique subjects.
+            content: `You are an expert timetable parser. Your task is to analyze the uploaded timetable image and return a structured JSON object containing all unique subjects.
 
 CRITICAL INSTRUCTIONS:
 1. CLEAN SUBJECT NAMES: Strip all teacher initials, room numbers, or abbreviations in parentheses from the subject name (e.g., "Industrial Engineering (GS)" becomes "Industrial Engineering", "Electronics Devices (CT)" becomes "Electronics Devices", "Open Elective (DKR)" becomes "Open Elective"). The name must be the clean, full name of the subject.
@@ -42,9 +42,8 @@ CRITICAL INSTRUCTIONS:
 4. TIME MAPPING: Convert all timings to 24-hour HH:MM format (e.g. "12:00 Noon to 1:00 PM" -> start "12:00", end "13:00"; "10:00 AM to 11:00 AM" -> start "10:00", end "11:00").
 5. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse.
 
-Return ONLY raw JSON matching this schema, without any markdown formatting or extra text:
+Return ONLY raw JSON matching this schema, without any markdown formatting, explanations, or extra text:
 {
-  "scratchpad": "Analysis: List each subject you see, clean its name, and list all its occurrences across days and times...",
   "subjects": [
     {
       "name": "Industrial Engineering",
@@ -76,7 +75,7 @@ Return ONLY raw JSON matching this schema, without any markdown formatting or ex
           }
         ],
         temperature: 0.1,
-        max_tokens: 1024
+        max_tokens: 2048
       };
     } else {
       // Use Llama 3.1 Text model to parse PDF text
@@ -85,7 +84,7 @@ Return ONLY raw JSON matching this schema, without any markdown formatting or ex
         messages: [
           {
             role: "system",
-            content: `You are an expert timetable parser. Your task is to analyze timetable text and return a structured JSON object containing a scratchpad and all unique subjects.
+            content: `You are an expert timetable parser. Your task is to analyze timetable text and return a structured JSON object containing all unique subjects.
 
 CRITICAL INSTRUCTIONS:
 1. GROUP BY SUBJECT: Each subject must appear EXACTLY ONCE in the returned "subjects" list.
@@ -94,9 +93,8 @@ CRITICAL INSTRUCTIONS:
 4. TIME MAPPING: Convert all timings to 24-hour HH:MM format (e.g. "12:30 - 1:30" -> start "12:30", end "13:30").
 5. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse.
 
-Return ONLY raw JSON matching this schema, without any markdown formatting or extra text:
+Return ONLY raw JSON matching this schema, without any markdown formatting, explanations, or extra text:
 {
-  "scratchpad": "Analysis: List each subject and the days/times you see in the text...",
   "subjects": [
     {
       "name": "Applied Chemistry",
@@ -116,7 +114,7 @@ Return ONLY raw JSON matching this schema, without any markdown formatting or ex
           }
         ],
         temperature: 0.1,
-        max_tokens: 1024
+        max_tokens: 2048
       };
     }
 
