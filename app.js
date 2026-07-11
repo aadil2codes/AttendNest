@@ -1281,7 +1281,9 @@ function parseAIResponse(rawText) {
 
 // Call NVIDIA chat completions API
 async function callNvidiaAI(text, apiKey) {
-  const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+  const targetUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
+  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+  const response = await fetch(proxyUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
