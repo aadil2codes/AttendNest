@@ -1280,14 +1280,14 @@ function parseAIResponse(rawText) {
 }
 
 // Call NVIDIA chat completions API via Vercel Serverless Function
-async function callNvidiaAI(text, apiKey) {
+async function callNvidiaAI(payloadData, apiKey) {
   // Call relative endpoint on same domain to bypass CORS completely
   const response = await fetch("/api/parse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ text, apiKey })
+    body: JSON.stringify({ ...payloadData, apiKey })
   });
 
   if (!response.ok) {
@@ -1298,6 +1298,16 @@ async function callNvidiaAI(text, apiKey) {
   const result = await response.json();
   const rawText = result.choices[0].message.content.trim();
   return parseAIResponse(rawText);
+}
+
+// Convert image file to Base64 Data URL
+function readImageAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
 }
 
 // Pipeline trigger
@@ -1314,32 +1324,35 @@ async function startAIImport() {
   }
 
   try {
-    let extractedText = "";
     const isPdf = file.name.toLowerCase().endsWith(".pdf");
+    let payloadData = {};
 
     if (isPdf) {
       showImportLoading("Reading PDF...");
+      let extractedText = "";
       try {
         extractedText = await extractPDFText(file);
       } catch (err) {
         console.error(err);
         throw new Error("[PDF Extraction Stage Failed]: " + err.message);
       }
+      payloadData = { text: extractedText, isImage: false };
     } else {
-      showImportLoading("Running OCR on image...");
+      showImportLoading("Encoding image for AI Vision...");
+      let imageDataUrl = "";
       try {
-        extractedText = await extractImageText(file);
+        imageDataUrl = await readImageAsBase64(file);
       } catch (err) {
         console.error(err);
-        throw new Error("[Image OCR Stage Failed]: " + err.message);
+        throw new Error("[Image Encoding Stage Failed]: " + err.message);
       }
+      payloadData = { imageDataUrl: imageDataUrl, isImage: true };
     }
 
-    console.log("Extracted Raw OCR Text:\n", extractedText);
-    showImportLoading("Understanding timetable with AI...");
+    showImportLoading("Understanding timetable with AI Vision...");
     let json;
     try {
-      json = await callNvidiaAI(extractedText, apiKey);
+      json = await callNvidiaAI(payloadData, apiKey);
     } catch (err) {
       console.error(err);
       throw new Error("[NVIDIA AI Completion Stage Failed]: " + err.message);
