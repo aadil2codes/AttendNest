@@ -33,10 +33,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: `You are AttendNest AI, a specialized College Timetable Parsing Assistant. Your only job is to accurately extract timetable information from the uploaded image and return a valid JSON object matching the schema below.
+            content: `You are AttendNest AI, a specialized College Timetable Parsing Assistant. Your only job is to accurately extract timetable information from the uploaded image and return a valid JSON object matching the schema below.
 
 Do NOT return markdown tables.
 Do NOT return bullet points.
@@ -78,19 +75,11 @@ Expected JSON output schema:
   ]
 }
 
-Parse the uploaded timetable image and extract all subjects with their days and times in the requested JSON format.`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageDataUrl // Base64 data URL
-                }
-              }
-            ]
+Parse the uploaded timetable image and extract all subjects with their days and times in the requested JSON format: <img src="${imageDataUrl}" />`
           }
         ],
-        temperature: 1.00,
-        max_tokens: 1024,
+        temperature: 0.1,
+        max_tokens: 2048,
         response_format: { type: "json_object" }
       };
     } else {
