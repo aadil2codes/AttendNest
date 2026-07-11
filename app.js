@@ -1296,8 +1296,18 @@ function parseAIResponse(rawText) {
     try {
       return JSON.parse(cleaned);
     } catch (e) {
-      console.error("Failed to parse cleaned JSON:", cleaned);
-      throw new Error(`JSON parse error. Raw response started with: "${rawText.substring(0, 200)}..."`);
+      // Sanitizer: If the AI output JS object literals instead of strict JSON (unquoted keys)
+      // E.g. {start: "10:00"} -> {"start": "10:00"}
+      // E.g. 1: { -> "1": {
+      try {
+        let fixedJson = cleaned
+          .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // Quote word keys
+          .replace(/([{,]\s*)(\d+)\s*:/g, '$1"$2":'); // Quote digit keys
+        return JSON.parse(fixedJson);
+      } catch (innerError) {
+        console.error("Failed to parse cleaned JSON:", cleaned);
+        throw new Error(`JSON parse error. Raw response started with: "${rawText.substring(0, 200)}..."`);
+      }
     }
   }
   
