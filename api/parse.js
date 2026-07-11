@@ -105,26 +105,22 @@ Only import actual timetable information.
 
 --------------------------------------------------
 
-SUBJECT DETECTION
+SUBJECT DETECTION & DEDUPLICATION
 Identify every unique subject.
 Merge repeated occurrences.
 Never create duplicate subjects.
+Example: Monday: Mathematics, Wednesday: Mathematics, Friday: Mathematics -> One Mathematics subject with multiple schedule entries.
 
-Example:
-Monday: Mathematics
-Wednesday: Mathematics
-Friday: Mathematics
-↓
-One Mathematics subject with multiple schedule entries.
+CRITICAL DETAILS:
+1. STRICT GROUPING BY CLEAN NAME: Even if a subject runs at different times on different days (e.g. Mon/Tue at 10:00-11:00, and Fri at 12:00-13:00), compile them into a single subject entry. Group all days in the "days" array, and map each day to its specific timing in the "timings" object.
+2. MULTIPLE CLASSES IN A CELL: If a timetable cell contains multiple classes/lab sessions (e.g. for different batches like B1 and B2, or listed together like 'Electronics Devices Lab / Digital Logic Lab'), you MUST split them and extract EACH as a separate subject with the same day and time slot.
+3. SCAN PAST LUNCH BREAK: Timetables are divided into morning and afternoon slots by a Lunch Break column. You MUST scan all afternoon columns (e.g. 2:00-3:00 PM, 3:00-5:00 PM, 5:00-6:00 PM) for classes and labs, continuing scan until the end of the day.
 
 --------------------------------------------------
 
 LABS
 Treat laboratory classes as separate subjects.
-Example:
-"Electronics Devices" vs "Electronics Devices Lab"
-These are NOT the same subject.
-Never merge theory and laboratory.
+Example: "Electronics Devices" vs "Electronics Devices Lab" are NOT the same subject. Never merge theory and laboratory.
 Ignore batch numbers like B1, B2, B3 unless they change the subject itself.
 
 --------------------------------------------------
@@ -137,13 +133,7 @@ Convert every time into 24-hour HH:MM format.
 
 DAYS
 Recognize every weekday. Map them correctly:
-Sunday = 0
-Monday = 1
-Tuesday = 2
-Wednesday = 3
-Thursday = 4
-Friday = 5
-Saturday = 6
+Sunday = 0, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
 
 --------------------------------------------------
 
@@ -165,6 +155,7 @@ If a class time is unreadable, leave it blank instead of guessing.
 OUTPUT FORMAT REQUIREMENTS:
 Return ONLY raw JSON matching this schema, without any markdown formatting, explanations, or extra text:
 {
+  "scratchpad": "Brief day-by-day sequence of classes to force row-by-row attention (e.g. Monday: 10-11 Subject A, 11-12 Subject B...)",
   "subjects": [
     {
       "name": "Mathematics",
@@ -269,26 +260,22 @@ Only import actual timetable information.
 
 --------------------------------------------------
 
-SUBJECT DETECTION
+SUBJECT DETECTION & DEDUPLICATION
 Identify every unique subject.
 Merge repeated occurrences.
 Never create duplicate subjects.
+Example: Monday: Mathematics, Wednesday: Mathematics, Friday: Mathematics -> One Mathematics subject with multiple schedule entries.
 
-Example:
-Monday: Mathematics
-Wednesday: Mathematics
-Friday: Mathematics
-↓
-One Mathematics subject with multiple schedule entries.
+CRITICAL DETAILS:
+1. STRICT GROUPING BY CLEAN NAME: Even if a subject runs at different times on different days (e.g. Mon/Tue at 10:00-11:00, and Fri at 12:00-13:00), compile them into a single subject entry. Group all days in the "days" array, and map each day to its specific timing in the "timings" object.
+2. MULTIPLE CLASSES IN A CELL: If a timetable cell contains multiple classes/lab sessions (e.g. for different batches like B1 and B2, or listed together like 'Electronics Devices Lab / Digital Logic Lab'), you MUST split them and extract EACH as a separate subject with the same day and time slot.
+3. SCAN PAST LUNCH BREAK: Timetables are divided into morning and afternoon slots by a Lunch Break column. You MUST scan all afternoon columns (e.g. 2:00-3:00 PM, 3:00-5:00 PM, 5:00-6:00 PM) for classes and labs, continuing scan until the end of the day.
 
 --------------------------------------------------
 
 LABS
 Treat laboratory classes as separate subjects.
-Example:
-"Electronics Devices" vs "Electronics Devices Lab"
-These are NOT the same subject.
-Never merge theory and laboratory.
+Example: "Electronics Devices" vs "Electronics Devices Lab" are NOT the same subject. Never merge theory and laboratory.
 Ignore batch numbers like B1, B2, B3 unless they change the subject itself.
 
 --------------------------------------------------
@@ -301,13 +288,7 @@ Convert every time into 24-hour HH:MM format.
 
 DAYS
 Recognize every weekday. Map them correctly:
-Sunday = 0
-Monday = 1
-Tuesday = 2
-Wednesday = 3
-Thursday = 4
-Friday = 5
-Saturday = 6
+Sunday = 0, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
 
 --------------------------------------------------
 
@@ -329,6 +310,7 @@ If a class time is unreadable, leave it blank instead of guessing.
 OUTPUT FORMAT REQUIREMENTS:
 Return ONLY raw JSON matching this schema, without any markdown formatting, explanations, or extra text:
 {
+  "scratchpad": "Brief day-by-day sequence of classes to force row-by-row attention (e.g. Monday: 10-11 Subject A, 11-12 Subject B...)",
   "subjects": [
     {
       "name": "Mathematics",
