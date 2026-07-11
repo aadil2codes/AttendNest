@@ -1279,82 +1279,25 @@ function parseAIResponse(rawText) {
   return JSON.parse(cleaned);
 }
 
-// Call NVIDIA chat completions API
-// Call NVIDIA chat completions API
+// Call NVIDIA chat completions API via Vercel Serverless Function
 async function callNvidiaAI(text, apiKey) {
-  const payload = JSON.stringify({
-    model: "meta/llama-3.1-70b-instruct",
-    messages: [
-      {
-        role: "system",
-        content: `You are an expert timetable parser. Extract all subjects.
-For every subject return:
-- subject name
-- confidence score (a float between 0.0 and 1.0 based on how clear the text was for this subject)
-- class days (array of numbers)
-- timings (object mapping day number to start/end times in 24h format HH:MM)
-
-Day mapping:
-Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0
-
-Return ONLY valid JSON matching this schema:
-{
-  "subjects": [
-    {
-      "name": "Mathematics",
-      "confidence": 0.95,
-      "days": [1, 3, 5],
-      "timings": {
-        "1": {"start": "09:00", "end": "10:00"},
-        "3": {"start": "09:00", "end": "10:00"},
-        "5": {"start": "09:00", "end": "10:00"}
-      }
-    }
-  ]
-}
-Make sure the timings object keys are strings ("1", "3", "5") matching the selected days. Do not include any explanation or markdown formatting in your response. Return raw JSON.`
-      },
-      {
-        role: "user",
-        content: text
-      }
-    ],
-    temperature: 0.1,
-    max_tokens: 1024
+  // Call relative endpoint on same domain to bypass CORS completely
+  const response = await fetch("/api/parse", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ text, apiKey })
   });
 
-  const targetUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-  const proxies = [
-    "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
-    "https://thingproxy.freeboard.io/fetch/" + targetUrl,
-    targetUrl // Direct fallback
-  ];
-
-  let lastError = null;
-  for (const url of proxies) {
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: payload
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const rawText = result.choices[0].message.content.trim();
-        return parseAIResponse(rawText);
-      } else {
-        lastError = new Error(`Status ${response.status} from proxy: ${url}`);
-      }
-    } catch (err) {
-      lastError = err;
-    }
+  if (!response.ok) {
+    const errorJson = await response.json().catch(() => ({}));
+    throw new Error(errorJson.error || `Server returned status ${response.status}`);
   }
 
-  throw lastError || new Error("All endpoints failed to resolve request.");
+  const result = await response.json();
+  const rawText = result.choices[0].message.content.trim();
+  return parseAIResponse(rawText);
 }
 
 // Pipeline trigger
