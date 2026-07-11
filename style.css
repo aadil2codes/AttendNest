@@ -1140,41 +1140,36 @@ body.dark .btn-danger:hover {
 }
 
 /* ===== SELECTION & BULK DELETION STYLES ===== */
-.selection-bar {
+.selection-delete-btn {
   position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  padding: 12px 20px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
   z-index: 100;
-  width: 90%;
-  max-width: 420px;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-body.dark .selection-bar {
-  background: rgba(17, 24, 39, 0.85);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-#selectionCountText {
+  box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+  padding: 12px 24px;
+  border-radius: 14px;
   font-weight: 700;
-  font-size: 14px;
-  color: var(--text-primary);
+  font-size: 15px;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
 }
 
-.selection-buttons {
-  display: flex;
+.selection-delete-btn:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 12px 30px rgba(220, 38, 38, 0.4);
+  filter: brightness(1.1);
 }
+
+body.dark .selection-delete-btn {
+  box-shadow: 0 10px 30px rgba(220, 38, 38, 0.2);
+}
+
+body.dark .selection-delete-btn:hover {
+  box-shadow: 0 12px 35px rgba(220, 38, 38, 0.35);
+}
+
 
 .selection-checkbox {
   width: 20px;

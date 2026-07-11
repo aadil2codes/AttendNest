@@ -311,14 +311,13 @@ function renderSubjects() {
     }
   }
 
-  const actionBar = document.getElementById("selectionActionBar");
-  const countText = document.getElementById("selectionCountText");
-  if (actionBar && countText) {
-    if (isSelectionMode) {
-      actionBar.classList.remove("hidden");
-      countText.textContent = `${selectedSubjects.length} selected`;
+  const deleteBtn = document.getElementById("selectionDeleteBtn");
+  if (deleteBtn) {
+    if (isSelectionMode && selectedSubjects.length > 0) {
+      deleteBtn.classList.remove("hidden");
+      deleteBtn.textContent = `🗑 Delete Selected (${selectedSubjects.length})`;
     } else {
-      actionBar.classList.add("hidden");
+      deleteBtn.classList.add("hidden");
     }
   }
 
@@ -853,9 +852,42 @@ async function registerBackgroundReminder() {
   }
 }
 
+function openDeleteSubjectModal() {
+  if (!currentSubject) {
+    alert("Open a subject first to delete it.");
+    return;
+  }
+  document.getElementById("deleteSubjectModal").classList.remove("hidden");
+}
 
+function closeDeleteSubjectModal() {
+  document.getElementById("deleteSubjectModal").classList.add("hidden");
+}
 
+function deleteSubject() {
+  if (!currentSubject) return;
 
+  const subjectToDelete = currentSubject;
+
+  // 1) Remove from data
+  delete data.subjects[subjectToDelete];
+  saveData();
+
+  // 2) Close modal
+  closeDeleteSubjectModal();
+
+  // 3) Reset state
+  currentSubject = null;
+  selectedDate = null;
+
+  // 4) Go back to home screen
+  calendarScreen.classList.add("hidden");
+  subjectScreen.classList.remove("hidden");
+
+  // 5) Show today’s subjects again
+  viewMode = "today";
+  renderSubjects();
+}
 
 function migrateToDaysSystem() {
   for (let subject in data.subjects) {

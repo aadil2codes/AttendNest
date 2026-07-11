@@ -73,6 +73,7 @@
 
     <div class="calendar-header-actions">
       <button onclick="goBack()" class="btn-secondary">⬅ Back</button>
+      <button class="btn-danger" onclick="openDeleteSubjectModal()">🗑 Delete Subject</button>
     </div>
 
     <h2 id="currentSubjectTitle" style="text-align: center; margin: 16px 0 8px 0;"></h2>
@@ -151,14 +152,18 @@
     </div>
   </div>
 
-  <!-- ================= SELECTION ACTION BAR ================= -->
-  <div id="selectionActionBar" class="selection-bar hidden">
-    <span id="selectionCountText">0 selected</span>
-    <div class="selection-buttons">
-      <button class="btn-secondary" onclick="exitSelectionMode()">Cancel</button>
-      <button class="btn-danger" onclick="deleteSelectedSubjects()" style="margin-left: 8px;">🗑 Delete</button>
+  <!-- ================= DELETE SUBJECT MODAL ================= -->
+  <div id="deleteSubjectModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Delete Subject?</h3>
+      <p>This will remove all attendance data for this subject.</p>
+      <button class="btn absent-btn" onclick="deleteSubject()">Yes, Delete</button>
+      <button class="btn cancel-btn" onclick="closeDeleteSubjectModal()">Cancel</button>
     </div>
   </div>
+
+  <!-- ================= SELECTION DELETE BUTTON ================= -->
+  <button id="selectionDeleteBtn" class="btn-danger selection-delete-btn hidden" onclick="deleteSelectedSubjects()">🗑 Delete</button>
 
   <script src="app.js"></script>
 </body>
