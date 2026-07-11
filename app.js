@@ -1511,9 +1511,9 @@ function renderImportPreview() {
       const startTime = sub.timings && sub.timings[day] ? sub.timings[day].start : "";
       const endTime = sub.timings && sub.timings[day] ? sub.timings[day].end : "";
       timingsHtml += `
-        <div class="timing-row" style="margin-top: 6px; display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:12px; font-weight:700; width:45px;">${dayNames[day]}:</span>
-          <div style="display:flex; align-items:center; gap:6px;">
+        <div class="preview-timing-row">
+          <span class="preview-timing-day">${dayNames[day]}:</span>
+          <div class="preview-timing-inputs">
             <input type="time" value="${startTime}" onchange="updatePreviewTime(${idx}, ${day}, 'start', this.value)" style="padding:4px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; background:var(--bg-primary); color:var(--text-primary);">
             <span style="font-size:11px; color:#6b7280;">to</span>
             <input type="time" value="${endTime}" onchange="updatePreviewTime(${idx}, ${day}, 'end', this.value)" style="padding:4px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; background:var(--bg-primary); color:var(--text-primary);">
@@ -1523,8 +1523,8 @@ function renderImportPreview() {
     });
 
     item.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px; gap:8px;">
-        <div style="display:flex; align-items:center; gap:8px; flex: 1;">
+      <div class="preview-item-header">
+        <div class="preview-item-header-left">
           <input type="checkbox" id="import-check-${idx}" ${sub.enabled ? 'checked' : ''} onchange="togglePreviewImport(${idx}, this.checked)" style="width:18px; height:18px; cursor:pointer;">
           <input type="text" value="${sub.name}" onchange="updatePreviewName(${idx}, this.value)" style="flex:1; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); font-family:inherit; font-weight:600; background:var(--bg-secondary); color:var(--text-primary); outline:none;">
         </div>
@@ -1538,7 +1538,7 @@ function renderImportPreview() {
       ` : ""}
 
       <div style="margin: 10px 0 5px 0; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Class Days:</div>
-      <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; margin-bottom:8px;">
+      <div class="preview-days-grid">
         ${dayButtonsHtml}
       </div>
 
