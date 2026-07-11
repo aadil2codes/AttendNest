@@ -162,6 +162,15 @@
     </div>
   </div>
 
+  <!-- ================= SELECTION ACTION BAR ================= -->
+  <div id="selectionActionBar" class="selection-bar hidden">
+    <span id="selectionCountText">0 selected</span>
+    <div class="selection-buttons">
+      <button class="btn-secondary" onclick="exitSelectionMode()">Cancel</button>
+      <button class="btn-danger" onclick="deleteSelectedSubjects()" style="margin-left: 8px;">🗑 Delete</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

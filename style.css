@@ -1139,6 +1139,78 @@ body.dark .btn-danger:hover {
   color: white;
 }
 
+/* ===== SELECTION & BULK DELETION STYLES ===== */
+.selection-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 12px 20px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  z-index: 100;
+  width: 90%;
+  max-width: 420px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.dark .selection-bar {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+#selectionCountText {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.selection-buttons {
+  display: flex;
+}
+
+.selection-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  margin-right: 12px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.selection-checkbox.checked {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.selection-checkbox.checked::after {
+  content: "✓";
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.subject-item.selected {
+  border: 1.5px solid var(--accent-primary) !important;
+  background: rgba(37, 99, 235, 0.04) !important;
+}
+
+body.dark .subject-item.selected {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+
 
 
 

@@ -10,6 +10,8 @@ let selectedDate = null;
 let currentYear = null;
 let currentMonth = null;
 let viewMode = "today"; // "today" or "all"
+let isSelectionMode = false;
+let selectedSubjects = [];
 
 
 
@@ -309,6 +311,17 @@ function renderSubjects() {
     }
   }
 
+  const actionBar = document.getElementById("selectionActionBar");
+  const countText = document.getElementById("selectionCountText");
+  if (actionBar && countText) {
+    if (isSelectionMode) {
+      actionBar.classList.remove("hidden");
+      countText.textContent = `${selectedSubjects.length} selected`;
+    } else {
+      actionBar.classList.add("hidden");
+    }
+  }
+
   subjectListDiv.innerHTML = "";
   const today = new Date().getDay(); // 0 = Sun, 1 = Mon, ...
   const todayDateStr = getLocalDateString();
@@ -378,7 +391,7 @@ subjects.forEach(sub => {
   const todayRecord = subject.records ? subject.records[todayDateStr] : null;
 
   let quickAttendanceHtml = "";
-  if (hasClassToday) {
+  if (hasClassToday && !isSelectionMode) {
     if (!todayRecord) {
       quickAttendanceHtml = `
         <div class="quick-attendance">
@@ -407,15 +420,23 @@ subjects.forEach(sub => {
     }
   }
 
+    const isSelected = selectedSubjects.includes(sub);
+    const selectBoxHtml = isSelectionMode 
+      ? `<div class="selection-checkbox ${isSelected ? 'checked' : ''}"></div>`
+      : "";
+
     const div = document.createElement("div");
-    div.className = "subject-item";
+    div.className = "subject-item" + (isSelected ? " selected" : "");
 
     div.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <span class="subject-name">${sub}</span>
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          ${timeHtml}
-          ${bunkHintHtml}
+      <div style="display: flex; align-items: center;">
+        ${selectBoxHtml}
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span class="subject-name">${sub}</span>
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            ${timeHtml}
+            ${bunkHintHtml}
+          </div>
         </div>
       </div>
       <div class="subject-right-content">
@@ -430,7 +451,48 @@ subjects.forEach(sub => {
     else if (stats.percent >= 65) p.classList.add("percent-warning");
     else p.classList.add("percent-danger");
 
-    div.onclick = () => openSubject(sub);
+    let pressTimer;
+    let isLongPress = false;
+
+    div.addEventListener("mousedown", (e) => {
+      if (e.target.closest(".quick-attendance")) return;
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        enterSelectionMode(sub);
+      }, 600);
+    });
+
+    div.addEventListener("touchstart", (e) => {
+      if (e.target.closest(".quick-attendance")) return;
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        enterSelectionMode(sub);
+      }, 600);
+    }, { passive: true });
+
+    div.addEventListener("mouseup", () => clearTimeout(pressTimer));
+    div.addEventListener("touchend", () => clearTimeout(pressTimer));
+    div.addEventListener("mouseleave", () => clearTimeout(pressTimer));
+    div.addEventListener("touchcancel", () => clearTimeout(pressTimer));
+
+    div.onclick = (e) => {
+      if (e.target.closest(".quick-attendance")) return;
+      
+      if (isSelectionMode) {
+        e.stopPropagation();
+        toggleSubjectSelection(sub);
+        return;
+      }
+      if (isLongPress) {
+        e.stopPropagation();
+        isLongPress = false;
+        return;
+      }
+      openSubject(sub);
+    };
+
     subjectListDiv.appendChild(div);
   }
 );
@@ -916,5 +978,48 @@ function saveSelectedDays() {
   selectedDays = [];
   closeAddSubjectModal();
   renderSubjects();
+}
+
+// ===== MULTI-SELECTION & DELETION =====
+function enterSelectionMode(firstSelectedSubject) {
+  isSelectionMode = true;
+  selectedSubjects = [firstSelectedSubject];
+  renderSubjects();
+}
+
+function exitSelectionMode() {
+  isSelectionMode = false;
+  selectedSubjects = [];
+  renderSubjects();
+}
+
+function toggleSubjectSelection(subjectName) {
+  if (selectedSubjects.includes(subjectName)) {
+    selectedSubjects = selectedSubjects.filter(s => s !== subjectName);
+  } else {
+    selectedSubjects.push(subjectName);
+  }
+
+  if (selectedSubjects.length === 0) {
+    exitSelectionMode();
+  } else {
+    renderSubjects();
+  }
+}
+
+function deleteSelectedSubjects() {
+  if (selectedSubjects.length === 0) return;
+
+  const confirmMsg = selectedSubjects.length === 1
+    ? `Delete "${selectedSubjects[0]}"? This will remove all its attendance data.`
+    : `Delete the ${selectedSubjects.length} selected subjects? This will remove all their attendance data.`;
+
+  if (confirm(confirmMsg)) {
+    selectedSubjects.forEach(sub => {
+      delete data.subjects[sub];
+    });
+    saveData();
+    exitSelectionMode();
+  }
 }
 
