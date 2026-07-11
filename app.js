@@ -1273,9 +1273,15 @@ async function extractImageText(file) {
 // Parse AI Markdown or Text response
 function parseAIResponse(rawText) {
   let cleaned = rawText.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```[a-zA-Z]*\s*/, "").replace(/\s*```$/, "");
+  
+  // Extract only the JSON block (from the first '{' to the last '}')
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   }
+  
   return JSON.parse(cleaned);
 }
 
