@@ -1415,8 +1415,16 @@ async function startAIImport() {
       clearInterval(loadingInterval);
     }
 
-    if (!json || !json.subjects || !Array.isArray(json.subjects)) {
-      throw new Error("AI returned invalid timetable structure.");
+    if (json && json.error === "not_a_timetable") {
+      alert("Please upload a valid timetable or schedule.");
+      showImportSetup();
+      return;
+    }
+
+    if (!json || !json.subjects || !Array.isArray(json.subjects) || json.subjects.length === 0) {
+      alert("Please upload a valid timetable or schedule.");
+      showImportSetup();
+      return;
     }
 
     // Group and merge duplicate subjects returned by the AI

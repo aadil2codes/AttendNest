@@ -52,6 +52,8 @@ CRITICAL EXTRACTION RULES:
 - Time: Convert all timings to 24-hour HH:MM format (e.g. "10:00 AM to 11:00 AM" -> start "10:00", end "11:00", "2:00 PM to 3:00 PM" -> start "14:00", end "15:00").
 - Days: Sunday = 0, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6.
 - Confidence: If you are not sure about a class timing or subject, set confidence to "low", otherwise "high".
+- Non-Timetables: If the uploaded file is not an academic timetable or class schedule (e.g. it is a photo, receipt, message screenshot, textbook page, etc.), you MUST return this exact JSON response: { "error": "not_a_timetable" }
+
 
 Expected JSON output schema:
 {
