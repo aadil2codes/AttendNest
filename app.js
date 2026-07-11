@@ -1399,8 +1399,10 @@ async function startAIImport() {
     let stageIdx = 0;
     showImportLoading(progressStages[0]);
     loadingInterval = setInterval(() => {
-      stageIdx = (stageIdx + 1) % progressStages.length;
-      document.getElementById("importProgressText").textContent = progressStages[stageIdx];
+      if (stageIdx < progressStages.length - 1) {
+        stageIdx++;
+        document.getElementById("importProgressText").textContent = progressStages[stageIdx];
+      }
     }, 1500);
 
     let json;
