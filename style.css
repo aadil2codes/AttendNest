@@ -802,53 +802,88 @@ button {
   color: #b91c1c;
 }
 
-/* ===== THEME TOGGLE BUTTON ===== */
-.theme-toggle-btn {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  padding: 8px;
-  border-radius: 50%;
+/* ===== SLIDING THEME SWITCH ===== */
+.theme-toggle-switch {
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
+  outline: none;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  width: 42px;
-  height: 42px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-track {
+  width: 58px;
+  height: 28px;
+  background-color: #e2e8f0; /* Light mode track */
+  border-radius: 999px;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  border: 1px solid #cbd5e1;
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
-.theme-toggle-btn:hover {
-  background: var(--border-color);
-  transform: scale(1.08);
-}
-
-.theme-toggle-btn svg {
+.switch-knob {
+  width: 22px;
+  height: 22px;
+  background-color: #1e293b; /* Light mode knob (dark circle) */
+  border-radius: 50%;
   position: absolute;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  top: 2px;
+  left: 32px; /* Light mode knob position (right side) */
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* In Light Mode: Show moon, Hide sun */
-body:not(.dark) .theme-toggle-btn .sun-icon {
-  opacity: 0;
-  transform: rotate(90deg) scale(0);
-}
-body:not(.dark) .theme-toggle-btn .moon-icon {
-  opacity: 1;
-  transform: rotate(0) scale(1);
+.switch-icon {
+  width: 14px;
+  height: 14px;
+  z-index: 1;
+  transition: opacity 0.3s ease, color 0.3s ease;
+  pointer-events: none;
 }
 
-/* In Dark Mode: Show sun, Hide moon */
-body.dark .theme-toggle-btn .sun-icon {
+/* Light Mode values:
+   - Sun (left): black/dark grey color, fully visible
+   - Moon (right): hidden / low opacity
+*/
+body:not(.dark) .switch-track .sun-icon {
+  color: #0f172a;
   opacity: 1;
-  transform: rotate(0) scale(1);
 }
-body.dark .theme-toggle-btn .moon-icon {
-  opacity: 0;
-  transform: rotate(-90deg) scale(0);
+body:not(.dark) .switch-track .moon-icon {
+  color: #94a3b8;
+  opacity: 0.3;
+}
+
+/* Dark Mode overrides:
+   - Track: dark grey/black
+   - Knob background: white
+   - Knob position: sliding to the left
+*/
+body.dark .switch-track {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+body.dark .switch-knob {
+  background-color: #ffffff; /* White knob */
+  left: 2px; /* Slide to the left side */
+}
+
+body.dark .switch-track .sun-icon {
+  color: #475569;
+  opacity: 0.3;
+}
+
+body.dark .switch-track .moon-icon {
+  color: #f3f4f6;
+  opacity: 1;
 }
 
 /* ===== DARK MODE OVERRIDES & TRANSITIONS ===== */
