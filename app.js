@@ -1571,6 +1571,17 @@ function togglePreviewDay(idx, day) {
   renderImportPreview();
 }
 
+function addPreviewSubjectManually() {
+  tempImportSubjects.push({
+    name: "",
+    confidence: "high",
+    days: [],
+    timings: {},
+    enabled: true
+  });
+  renderImportPreview();
+}
+
 function updatePreviewTime(idx, day, field, value) {
   const sub = tempImportSubjects[idx];
   if (!sub.timings) sub.timings = {};
