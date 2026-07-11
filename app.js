@@ -1280,21 +1280,14 @@ function parseAIResponse(rawText) {
 }
 
 // Call NVIDIA chat completions API
+// Call NVIDIA chat completions API
 async function callNvidiaAI(text, apiKey) {
-  const targetUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
-  const response = await fetch(proxyUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "meta/llama-3.1-70b-instruct",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert timetable parser. Extract all subjects.
+  const payload = JSON.stringify({
+    model: "meta/llama-3.1-70b-instruct",
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert timetable parser. Extract all subjects.
 For every subject return:
 - subject name
 - confidence score (a float between 0.0 and 1.0 based on how clear the text was for this subject)
@@ -1320,24 +1313,48 @@ Return ONLY valid JSON matching this schema:
   ]
 }
 Make sure the timings object keys are strings ("1", "3", "5") matching the selected days. Do not include any explanation or markdown formatting in your response. Return raw JSON.`
-        },
-        {
-          role: "user",
-          content: text
-        }
-      ],
-      temperature: 0.1,
-      max_tokens: 1024
-    })
+      },
+      {
+        role: "user",
+        content: text
+      }
+    ],
+    temperature: 0.1,
+    max_tokens: 1024
   });
 
-  if (!response.ok) {
-    throw new Error(`NVIDIA API returned status ${response.status}`);
+  const targetUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
+  const proxies = [
+    "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
+    "https://thingproxy.freeboard.io/fetch/" + targetUrl,
+    targetUrl // Direct fallback
+  ];
+
+  let lastError = null;
+  for (const url of proxies) {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: payload
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const rawText = result.choices[0].message.content.trim();
+        return parseAIResponse(rawText);
+      } else {
+        lastError = new Error(`Status ${response.status} from proxy: ${url}`);
+      }
+    } catch (err) {
+      lastError = err;
+    }
   }
 
-  const result = await response.json();
-  const rawText = result.choices[0].message.content.trim();
-  return parseAIResponse(rawText);
+  throw lastError || new Error("All endpoints failed to resolve request.");
 }
 
 // Pipeline trigger
@@ -1359,14 +1376,30 @@ async function startAIImport() {
 
     if (isPdf) {
       showImportLoading("Reading PDF...");
-      extractedText = await extractPDFText(file);
+      try {
+        extractedText = await extractPDFText(file);
+      } catch (err) {
+        console.error(err);
+        throw new Error("[PDF Extraction Stage Failed]: " + err.message);
+      }
     } else {
       showImportLoading("Running OCR on image...");
-      extractedText = await extractImageText(file);
+      try {
+        extractedText = await extractImageText(file);
+      } catch (err) {
+        console.error(err);
+        throw new Error("[Image OCR Stage Failed]: " + err.message);
+      }
     }
 
     showImportLoading("Understanding timetable with AI...");
-    const json = await callNvidiaAI(extractedText, apiKey);
+    let json;
+    try {
+      json = await callNvidiaAI(extractedText, apiKey);
+    } catch (err) {
+      console.error(err);
+      throw new Error("[NVIDIA AI Completion Stage Failed]: " + err.message);
+    }
 
     if (!json || !json.subjects || !Array.isArray(json.subjects)) {
       throw new Error("AI returned invalid timetable structure.");
