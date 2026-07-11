@@ -49,6 +49,12 @@
        </button>
      </div>
 
+     <div style="max-width: 380px; margin: 0 auto 16px auto; padding: 0 4px;">
+       <button onclick="openImportModal()" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; font-weight: 600;">
+         📄 Import Timetable with AI
+       </button>
+     </div>
+
     <!-- ================= TARGET GOAL ================= -->
     <div class="target-goal-container">
       <span class="target-goal-label">🎯 Target Attendance:</span>
@@ -197,6 +203,54 @@
   <!-- ================= SELECTION DELETE BUTTON ================= -->
   <button id="selectionDeleteBtn" class="btn-danger selection-delete-btn hidden" onclick="deleteSelectedSubjects()">🗑 Delete</button>
 
+  <!-- ================= IMPORT TIMETABLE MODAL ================= -->
+  <div id="importTimetableModal" class="modal hidden">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto; width: 90%; max-width: 500px;">
+      <h3>📄 Import Timetable with AI</h3>
+
+      <!-- Setup/Upload View -->
+      <div id="importSetupView">
+        <p style="text-align: left; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Select Timetable File (PDF or Image):</p>
+        <input type="file" id="timetableFileInput" accept=".pdf, .png, .jpg, .jpeg" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color); margin-bottom: 20px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary); cursor: pointer;">
+
+        <button class="btn present-btn" onclick="startAIImport()">Start Parsing</button>
+        <button class="btn cancel-btn" onclick="closeImportModal()">Cancel</button>
+      </div>
+
+      <!-- Loading View -->
+      <div id="importLoadingView" class="hidden" style="text-align:center; padding: 20px 0;">
+        <div class="spinner" style="margin: 0 auto 16px auto;"></div>
+        <div id="importProgressText" style="font-weight:600; font-size:15px; color:var(--text-primary);">Reading PDF...</div>
+      </div>
+
+      <!-- Preview View -->
+      <div id="importPreviewView" class="hidden" style="text-align: left;">
+        <p style="font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px;">Confirm and edit parsed classes before importing:</p>
+        
+        <div id="importPreviewList" style="max-height: 45vh; overflow-y: auto; margin-bottom: 16px; padding-right: 4px;"></div>
+
+        <button class="btn present-btn" onclick="importSubjects()">Import Selected</button>
+        <button class="btn cancel-btn" onclick="showImportSetup()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DUPLICATE RESOLUTION MODAL ================= -->
+  <div id="duplicateModal" class="modal hidden" style="z-index: 150;">
+    <div class="modal-content">
+      <h3 id="duplicateTitle">Subject already exists</h3>
+      <p id="duplicateText" style="margin-bottom: 20px;"></p>
+      <button class="btn present-btn" id="btnReplaceDuplicate" style="margin-bottom: 8px;">Replace Config (Keep Logs)</button>
+      <button class="btn present-btn" id="btnRenameDuplicate" style="background:#2563eb; margin-bottom: 8px;">Rename Subject</button>
+      <button class="btn cancel-btn" id="btnSkipDuplicate">Skip Import</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ let viewMode = "today"; // "today" or "all"
 let isSelectionMode = false;
 let selectedSubjects = [];
 let editingSelectedDays = [];
+let tempImportSubjects = [];
 
 
 
@@ -1200,6 +1201,382 @@ function saveEditSubject() {
   renderCalendar();
   updateStats();
   checkTodayReminder();
+}
+
+// ===== AI TIMETABLE IMPORT FEATURE =====
+
+function openImportModal() {
+  const fileInput = document.getElementById("timetableFileInput");
+  if (fileInput) fileInput.value = "";
+
+  showImportSetup();
+  document.getElementById("importTimetableModal").classList.remove("hidden");
+}
+
+function closeImportModal() {
+  document.getElementById("importTimetableModal").classList.add("hidden");
+  tempImportSubjects = [];
+}
+
+function showImportSetup() {
+  document.getElementById("importSetupView").classList.remove("hidden");
+  document.getElementById("importLoadingView").classList.add("hidden");
+  document.getElementById("importPreviewView").classList.add("hidden");
+}
+
+function showImportLoading(text) {
+  document.getElementById("importSetupView").classList.add("hidden");
+  document.getElementById("importLoadingView").classList.remove("hidden");
+  document.getElementById("importPreviewView").classList.add("hidden");
+  document.getElementById("importProgressText").textContent = text;
+}
+
+function showImportPreviewView() {
+  document.getElementById("importSetupView").classList.add("hidden");
+  document.getElementById("importLoadingView").classList.add("hidden");
+  document.getElementById("importPreviewView").classList.remove("hidden");
+}
+
+// PDF Text Extraction using PDF.js
+async function extractPDFText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = "";
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(" ");
+    fullText += pageText + "\n";
+  }
+
+  if (!fullText.trim()) {
+    throw new Error("PDF contains no readable text. It might be scanned; please upload it as an image instead.");
+  }
+
+  return fullText;
+}
+
+// Image OCR Text Extraction using Tesseract.js
+async function extractImageText(file) {
+  const worker = await Tesseract.createWorker("eng");
+  const ret = await worker.recognize(file);
+  await worker.terminate();
+
+  if (!ret.data.text.trim()) {
+    throw new Error("OCR could not read any text from the image.");
+  }
+
+  return ret.data.text;
+}
+
+// Parse AI Markdown or Text response
+function parseAIResponse(rawText) {
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```[a-zA-Z]*\s*/, "").replace(/\s*```$/, "");
+  }
+  return JSON.parse(cleaned);
+}
+
+// Call NVIDIA chat completions API
+async function callNvidiaAI(text, apiKey) {
+  const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: "meta/llama-3.1-70b-instruct",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert timetable parser. Extract all subjects.
+For every subject return:
+- subject name
+- confidence score (a float between 0.0 and 1.0 based on how clear the text was for this subject)
+- class days (array of numbers)
+- timings (object mapping day number to start/end times in 24h format HH:MM)
+
+Day mapping:
+Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0
+
+Return ONLY valid JSON matching this schema:
+{
+  "subjects": [
+    {
+      "name": "Mathematics",
+      "confidence": 0.95,
+      "days": [1, 3, 5],
+      "timings": {
+        "1": {"start": "09:00", "end": "10:00"},
+        "3": {"start": "09:00", "end": "10:00"},
+        "5": {"start": "09:00", "end": "10:00"}
+      }
+    }
+  ]
+}
+Make sure the timings object keys are strings ("1", "3", "5") matching the selected days. Do not include any explanation or markdown formatting in your response. Return raw JSON.`
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 1024
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`NVIDIA API returned status ${response.status}`);
+  }
+
+  const result = await response.json();
+  const rawText = result.choices[0].message.content.trim();
+  return parseAIResponse(rawText);
+}
+
+// Pipeline trigger
+async function startAIImport() {
+  const fileInput = document.getElementById("timetableFileInput");
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+  // HARDCODED NVIDIA API KEY (as requested by user)
+  const apiKey = "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"; 
+
+  if (!file) {
+    alert("Please select a file first.");
+    return;
+  }
+
+  try {
+    let extractedText = "";
+    const isPdf = file.name.toLowerCase().endsWith(".pdf");
+
+    if (isPdf) {
+      showImportLoading("Reading PDF...");
+      extractedText = await extractPDFText(file);
+    } else {
+      showImportLoading("Running OCR on image...");
+      extractedText = await extractImageText(file);
+    }
+
+    showImportLoading("Understanding timetable with AI...");
+    const json = await callNvidiaAI(extractedText, apiKey);
+
+    if (!json || !json.subjects || !Array.isArray(json.subjects)) {
+      throw new Error("AI returned invalid timetable structure.");
+    }
+
+    // Initialize tempImportSubjects
+    tempImportSubjects = json.subjects.map(s => ({
+      name: s.name || "Unnamed Subject",
+      confidence: s.confidence !== undefined ? s.confidence : 1.0,
+      days: Array.isArray(s.days) ? s.days : [],
+      timings: s.timings || {},
+      enabled: true
+    }));
+
+    showImportPreviewView();
+    renderImportPreview();
+  } catch (error) {
+    alert("Failed to import timetable: " + error.message);
+    showImportSetup();
+  }
+}
+
+// Render Preview List
+function renderImportPreview() {
+  const container = document.getElementById("importPreviewList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (tempImportSubjects.length === 0) {
+    container.innerHTML = "<p style='color:var(--text-secondary); text-align:center;'>No subjects parsed. Go back and try a different file.</p>";
+    return;
+  }
+
+  tempImportSubjects.forEach((sub, idx) => {
+    const isLowConfidence = sub.confidence !== undefined && sub.confidence < 0.7;
+    const item = document.createElement("div");
+    item.className = "preview-item" + (isLowConfidence ? " preview-low-confidence" : "");
+
+    // Generate day selection buttons for preview
+    let dayButtonsHtml = "";
+    const daysOfWeek = [1, 2, 3, 4, 5, 6, 0];
+    daysOfWeek.forEach(day => {
+      const isSelected = sub.days.includes(day);
+      dayButtonsHtml += `
+        <button class="btn day-btn preview-day-btn ${isSelected ? 'day-selected' : ''}" 
+                onclick="togglePreviewDay(${idx}, ${day})">${dayNames[day]}</button>
+      `;
+    });
+
+    // Generate timings inputs
+    let timingsHtml = "";
+    sub.days.sort((a,b) => (a===0?7:a) - (b===0?7:b)).forEach(day => {
+      const startTime = sub.timings && sub.timings[day] ? sub.timings[day].start : "";
+      const endTime = sub.timings && sub.timings[day] ? sub.timings[day].end : "";
+      timingsHtml += `
+        <div class="timing-row" style="margin-top: 6px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; font-weight:700; width:45px;">${dayNames[day]}:</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="time" value="${startTime}" onchange="updatePreviewTime(${idx}, ${day}, 'start', this.value)" style="padding:4px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; background:var(--bg-primary); color:var(--text-primary);">
+            <span style="font-size:11px; color:#6b7280;">to</span>
+            <input type="time" value="${endTime}" onchange="updatePreviewTime(${idx}, ${day}, 'end', this.value)" style="padding:4px; border-radius:6px; border:1px solid var(--border-color); font-family:inherit; background:var(--bg-primary); color:var(--text-primary);">
+          </div>
+        </div>
+      `;
+    });
+
+    item.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex: 1;">
+          <input type="checkbox" id="import-check-${idx}" ${sub.enabled ? 'checked' : ''} onchange="togglePreviewImport(${idx}, this.checked)" style="width:18px; height:18px; cursor:pointer;">
+          <input type="text" value="${sub.name}" onchange="updatePreviewName(${idx}, this.value)" style="flex:1; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); font-family:inherit; font-weight:600; background:var(--bg-secondary); color:var(--text-primary); outline:none;">
+        </div>
+        <button class="btn-danger" onclick="deletePreviewSubject(${idx})" style="padding:6px 10px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">🗑 Remove</button>
+      </div>
+
+      ${isLowConfidence ? `
+        <div class="confidence-banner">
+          ⚠️ Low confidence (${(sub.confidence * 100).toFixed(0)}%) - please verify details.
+        </div>
+      ` : ""}
+
+      <div style="margin: 10px 0 5px 0; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Class Days:</div>
+      <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; margin-bottom:8px;">
+        ${dayButtonsHtml}
+      </div>
+
+      ${timingsHtml ? `<div style="margin-top:8px; border-top:1px solid var(--border-color); padding-top:8px;">${timingsHtml}</div>` : ""}
+    `;
+
+    container.appendChild(item);
+  });
+}
+
+function togglePreviewImport(idx, checked) {
+  tempImportSubjects[idx].enabled = checked;
+}
+
+function updatePreviewName(idx, value) {
+  tempImportSubjects[idx].name = value.trim();
+}
+
+function deletePreviewSubject(idx) {
+  tempImportSubjects.splice(idx, 1);
+  renderImportPreview();
+}
+
+function togglePreviewDay(idx, day) {
+  const sub = tempImportSubjects[idx];
+  if (sub.days.includes(day)) {
+    sub.days = sub.days.filter(d => d !== day);
+    if (sub.timings) delete sub.timings[day];
+  } else {
+    sub.days.push(day);
+    if (!sub.timings) sub.timings = {};
+    sub.timings[day] = { start: "", end: "" };
+  }
+  renderImportPreview();
+}
+
+function updatePreviewTime(idx, day, field, value) {
+  const sub = tempImportSubjects[idx];
+  if (!sub.timings) sub.timings = {};
+  if (!sub.timings[day]) sub.timings[day] = { start: "", end: "" };
+  sub.timings[day][field] = value;
+}
+
+// Duplicate resolver modal handler
+function promptDuplicateResolution(name) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("duplicateModal");
+    const text = document.getElementById("duplicateText");
+
+    text.innerHTML = `Subject <b>"${name}"</b> already exists in your list.<br>What would you like to do?`;
+    modal.classList.remove("hidden");
+
+    document.getElementById("btnReplaceDuplicate").onclick = () => {
+      modal.classList.add("hidden");
+      resolve("replace");
+    };
+
+    document.getElementById("btnRenameDuplicate").onclick = () => {
+      modal.classList.add("hidden");
+      resolve("rename");
+    };
+
+    document.getElementById("btnSkipDuplicate").onclick = () => {
+      modal.classList.add("hidden");
+      resolve("skip");
+    };
+  });
+}
+
+// Save all confirmed preview subjects
+async function importSubjects() {
+  const enabledSubjects = tempImportSubjects.filter(s => s.enabled && s.name.trim());
+  if (enabledSubjects.length === 0) {
+    alert("No subjects selected for import.");
+    return;
+  }
+
+  for (let i = 0; i < enabledSubjects.length; i++) {
+    const sub = enabledSubjects[i];
+    let name = sub.name.trim();
+
+    if (data.subjects[name]) {
+      const choice = await promptDuplicateResolution(name);
+
+      if (choice === "skip") {
+        continue;
+      } else if (choice === "rename") {
+        let newName = "";
+        while (true) {
+          const inputName = prompt(`Enter a new name for "${name}":`, `${name} (New)`);
+          if (inputName === null) break;
+          const trimmed = inputName.trim();
+          if (!trimmed) {
+            alert("Subject name cannot be empty.");
+            continue;
+          }
+          if (data.subjects[trimmed]) {
+            alert(`"${trimmed}" already exists. Please choose a different name.`);
+            continue;
+          }
+          newName = trimmed;
+          break;
+        }
+        if (!newName) continue;
+        name = newName;
+      } else if (choice === "replace") {
+        // Overwrite subject config (days/timings) but preserve records!
+        const existingRecords = data.subjects[name].records || {};
+        data.subjects[name] = {
+          days: [...sub.days],
+          timings: sub.timings || {},
+          records: existingRecords
+        };
+        continue;
+      }
+    }
+
+    // Create new subject
+    data.subjects[name] = {
+      days: [...sub.days],
+      timings: sub.timings || {},
+      records: {}
+    };
+  }
+
+  saveData();
+  closeImportModal();
+  renderSubjects();
 }
 
 
