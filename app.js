@@ -12,6 +12,7 @@ let currentMonth = null;
 let viewMode = "today"; // "today" or "all"
 let isSelectionMode = false;
 let selectedSubjects = [];
+let editingSelectedDays = [];
 
 
 
@@ -1016,4 +1017,189 @@ function deleteSelectedSubjects() {
     exitSelectionMode();
   }
 }
+
+// ===== EDIT SUBJECT FEATURE =====
+function openEditSubjectModal() {
+  if (!currentSubject) return;
+  const subject = data.subjects[currentSubject];
+
+  // Prefill name
+  const nameInput = document.getElementById("editSubjectNameInput");
+  if (nameInput) nameInput.value = currentSubject;
+
+  // Prefill selected days
+  editingSelectedDays = [...(subject.days || [])];
+
+  // Set active state on edit day buttons
+  document.querySelectorAll(".edit-day-btn").forEach(btn => {
+    const day = Number(btn.getAttribute("data-day"));
+    if (editingSelectedDays.includes(day)) {
+      btn.classList.add("day-selected");
+    } else {
+      btn.classList.remove("day-selected");
+    }
+
+    // Click listener for edit day buttons
+    btn.onclick = () => {
+      if (editingSelectedDays.includes(day)) {
+        editingSelectedDays = editingSelectedDays.filter(d => d !== day);
+        btn.classList.remove("day-selected");
+      } else {
+        editingSelectedDays.push(day);
+        btn.classList.add("day-selected");
+      }
+      updateEditTimingInputs();
+    };
+  });
+
+  // Prefill timings
+  updateEditTimingInputs();
+
+  // Fill in existing timings
+  const timings = subject.timings || {};
+  editingSelectedDays.forEach(day => {
+    if (timings[day]) {
+      const startInput = document.getElementById(`edit-start-time-${day}`);
+      const endInput = document.getElementById(`edit-end-time-${day}`);
+      if (startInput && timings[day].start) startInput.value = timings[day].start;
+      if (endInput && timings[day].end) endInput.value = timings[day].end;
+    }
+  });
+
+  document.getElementById("editSubjectModal").classList.remove("hidden");
+}
+
+function closeEditSubjectModal() {
+  document.getElementById("editSubjectModal").classList.add("hidden");
+  editingSelectedDays = [];
+}
+
+function updateEditTimingInputs() {
+  const container = document.getElementById("editTimingInputsContainer");
+  if (!container) return;
+
+  // Store currently typed values in the inputs so they don't get lost when toggling other days!
+  const currentValues = {};
+  editingSelectedDays.forEach(day => {
+    const startVal = document.getElementById(`edit-start-time-${day}`);
+    const endVal = document.getElementById(`edit-end-time-${day}`);
+    currentValues[day] = {
+      start: startVal ? startVal.value : "",
+      end: endVal ? endVal.value : ""
+    };
+  });
+
+  container.innerHTML = "";
+  if (editingSelectedDays.length === 0) return;
+
+  const title = document.createElement("p");
+  title.style.margin = "12px 0 6px 0";
+  title.style.fontWeight = "600";
+  title.style.fontSize = "14px";
+  title.style.color = "#374151";
+  title.textContent = "Class Timings (Optional):";
+  container.appendChild(title);
+
+  // Sort editing days
+  const sortedDays = [...editingSelectedDays].sort((a, b) => {
+    const valA = a === 0 ? 7 : a;
+    const valB = b === 0 ? 7 : b;
+    return valA - valB;
+  });
+
+  sortedDays.forEach(day => {
+    const row = document.createElement("div");
+    row.className = "timing-row";
+    row.innerHTML = `
+      <span>${dayNames[day]}</span>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input type="time" id="edit-start-time-${day}">
+        <span style="font-size:12px; font-weight:normal; color:#6b7280;">to</span>
+        <input type="time" id="edit-end-time-${day}">
+      </div>
+    `;
+    container.appendChild(row);
+
+    // Restore previous values if they existed
+    const startInput = row.querySelector(`#edit-start-time-${day}`);
+    const endInput = row.querySelector(`#edit-end-time-${day}`);
+
+    const subject = data.subjects[currentSubject];
+    const originalTimings = (subject && subject.timings) ? subject.timings : {};
+
+    if (currentValues[day]) {
+      if (startInput) startInput.value = currentValues[day].start;
+      if (endInput) endInput.value = currentValues[day].end;
+    } else if (originalTimings[day]) {
+      if (startInput && originalTimings[day].start) startInput.value = originalTimings[day].start;
+      if (endInput && originalTimings[day].end) endInput.value = originalTimings[day].end;
+    }
+  });
+}
+
+function saveEditSubject() {
+  if (!currentSubject) return;
+
+  const nameInput = document.getElementById("editSubjectNameInput");
+  const newName = nameInput.value.trim();
+  const oldName = currentSubject;
+
+  // 1. Validation
+  if (!newName) {
+    alert("Enter subject name first");
+    return;
+  }
+
+  if (newName.toLowerCase() !== oldName.toLowerCase() && data.subjects[newName]) {
+    alert("Subject already exists");
+    return;
+  }
+
+  if (editingSelectedDays.length === 0) {
+    alert("Select at least one day");
+    return;
+  }
+
+  // Collect timings
+  const timings = {};
+  editingSelectedDays.forEach(day => {
+    const startInput = document.getElementById(`edit-start-time-${day}`);
+    const endInput = document.getElementById(`edit-end-time-${day}`);
+    const startVal = startInput ? startInput.value : "";
+    const endVal = endInput ? endInput.value : "";
+    if (startVal || endVal) {
+      timings[day] = { start: startVal, end: endVal };
+    }
+  });
+
+  // Preserve records
+  const records = data.subjects[oldName].records || {};
+
+  // If name changed, delete old key, else overwrite
+  if (newName !== oldName) {
+    delete data.subjects[oldName];
+  }
+
+  data.subjects[newName] = {
+    days: [...editingSelectedDays],
+    timings: timings,
+    records: records
+  };
+
+  // Update active state
+  currentSubject = newName;
+
+  saveData();
+  closeEditSubjectModal();
+
+  // Refresh dashboard and current subject views
+  renderSubjects();
+
+  // Refresh subject details screen
+  document.getElementById("currentSubjectTitle").textContent = newName;
+  renderCalendar();
+  updateStats();
+  checkTodayReminder();
+}
+
 

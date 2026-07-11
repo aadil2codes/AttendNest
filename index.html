@@ -73,7 +73,10 @@
 
     <div class="calendar-header-actions">
       <button onclick="goBack()" class="btn-secondary">⬅ Back</button>
-      <button class="btn-danger" onclick="openDeleteSubjectModal()">🗑 Delete Subject</button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-secondary" onclick="openEditSubjectModal()">✏️ Edit Subject</button>
+        <button class="btn-danger" onclick="openDeleteSubjectModal()">🗑 Delete Subject</button>
+      </div>
     </div>
 
     <h2 id="currentSubjectTitle" style="text-align: center; margin: 16px 0 8px 0;"></h2>
@@ -149,6 +152,35 @@
       <br>
       <button class="btn present-btn" onclick="saveSelectedDays()">Save Days</button>
       <button class="btn cancel-btn" onclick="closeAddSubjectModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ================= EDIT SUBJECT MODAL ================= -->
+  <div id="editSubjectModal" class="modal hidden">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+      <h3>Edit Subject</h3>
+
+      <input type="text" id="editSubjectNameInput" placeholder="Enter subject name" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; font-family: inherit; font-size: 15px; font-weight: 500; outline: none; background: var(--bg-secondary); color: var(--text-primary);">
+
+      <p>Select Class Days:</p>
+
+      <div id="editMultiDaySelector"
+        style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px;">
+        <button class="btn day-btn edit-day-btn" data-day="1">Mon</button>
+        <button class="btn day-btn edit-day-btn" data-day="2">Tue</button>
+        <button class="btn day-btn edit-day-btn" data-day="3">Wed</button>
+        <button class="btn day-btn edit-day-btn" data-day="4">Thu</button>
+        <button class="btn day-btn edit-day-btn" data-day="5">Fri</button>
+        <button class="btn day-btn edit-day-btn" data-day="6">Sat</button>
+        <button class="btn day-btn edit-day-btn" data-day="0">Sun</button>
+      </div>
+
+      <!-- Container for dynamic time inputs -->
+      <div id="editTimingInputsContainer"></div>
+
+      <br>
+      <button class="btn present-btn" onclick="saveEditSubject()">Save Changes</button>
+      <button class="btn cancel-btn" onclick="closeEditSubjectModal()">Cancel</button>
     </div>
   </div>
 
