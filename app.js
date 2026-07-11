@@ -1237,24 +1237,37 @@ function showImportPreviewView() {
   document.getElementById("importPreviewView").classList.remove("hidden");
 }
 
-// PDF Text Extraction using PDF.js
-async function extractPDFText(file) {
+// Render PDF page 1 to a Base64 Image Data URL using Canvas
+async function renderPDFToImage(file) {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = "";
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map(item => item.str).join(" ");
-    fullText += pageText + "\n";
+  
+  if (pdf.numPages === 0) {
+    throw new Error("PDF contains no pages.");
   }
-
-  if (!fullText.trim()) {
-    throw new Error("PDF contains no readable text. It might be scanned; please upload it as an image instead.");
-  }
-
-  return fullText;
+  
+  // Load page 1
+  const page = await pdf.getPage(1);
+  
+  // Set viewport scale (2.0 for higher resolution/readability)
+  const scale = 2.0;
+  const viewport = page.getViewport({ scale });
+  
+  // Create offscreen canvas
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+  
+  // Render
+  const renderContext = {
+    canvasContext: context,
+    viewport: viewport
+  };
+  await page.render(renderContext).promise;
+  
+  // Convert to Base64 PNG data URL
+  return canvas.toDataURL("image/png");
 }
 
 // Image OCR Text Extraction using Tesseract.js
@@ -1334,15 +1347,15 @@ async function startAIImport() {
     let payloadData = {};
 
     if (isPdf) {
-      showImportLoading("Reading PDF...");
-      let extractedText = "";
+      showImportLoading("Rendering PDF visually for AI...");
+      let imageDataUrl = "";
       try {
-        extractedText = await extractPDFText(file);
+        imageDataUrl = await renderPDFToImage(file);
       } catch (err) {
         console.error(err);
-        throw new Error("[PDF Extraction Stage Failed]: " + err.message);
+        throw new Error("[PDF Rendering Stage Failed]: " + err.message);
       }
-      payloadData = { text: extractedText, isImage: false };
+      payloadData = { imageDataUrl: imageDataUrl, isImage: true };
     } else {
       showImportLoading("Encoding image for AI Vision...");
       let imageDataUrl = "";
