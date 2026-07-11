@@ -46,6 +46,8 @@ Your response MUST start with '{' and end with '}'.
 CRITICAL EXTRACTION RULES:
 - Extracted subject names must be cleaned: strip teacher initials, room numbers, or suffixes in parentheses (e.g. "Industrial Engineering (GS)" -> "Industrial Engineering", "Electronics Devices (CT)" -> "Electronics Devices").
 - Strict Grouping: Each subject must appear EXACTLY ONCE in the returned "subjects" list. Even if a subject runs at different times on different days (e.g. Industrial Engineering runs Mon/Tue at 10:00-11:00, and Fri at 12:00-13:00), compile them into a single subject entry. Group all days in the "days" array, and map each day to its specific timing in the "timings" object.
+- Lunch Break & Afternoon: Timetables often have a vertical "LUNCH BREAK" section. Do NOT stop scanning when you reach the lunch break; you MUST scan both sides of the lunch break and extract all afternoon classes/labs (e.g., from 2:00 PM to 6:00 PM).
+- Multi-Class Cells: If a single cell contains multiple sessions (e.g., labs for different batches like B1 and B2 listed in the same box), extract EACH as a separate subject with the same day and time slot.
 - Labs: Treat laboratory classes as separate subjects (e.g., "Electronics Devices Lab" vs "Electronics Devices" are separate). Do not merge them. Ignore batch suffixes like B1, B2, B3.
 - Time: Convert all timings to 24-hour HH:MM format (e.g. "10:00 AM to 11:00 AM" -> start "10:00", end "11:00", "2:00 PM to 3:00 PM" -> start "14:00", end "15:00").
 - Days: Sunday = 0, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6.
