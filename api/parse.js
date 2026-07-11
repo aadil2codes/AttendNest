@@ -27,9 +27,9 @@ export default async function handler(req, res) {
     let payload = {};
 
     if (isImage) {
-      // Use Llama 3.2 Vision model to read the image directly
+      // Use Llama 3.2 90B Vision model (extremely high accuracy) to read the image directly
       payload = {
-        model: "meta/llama-3.2-11b-vision-instruct",
+        model: "meta/llama-3.2-90b-vision-instruct",
         messages: [
           {
             role: "system",
@@ -49,21 +49,43 @@ CRITICAL INSTRUCTIONS:
 5. TIME MAPPING: Convert all timings to 24-hour HH:MM format (e.g. "12:00 Noon to 1:00 PM" -> start "12:00", end "13:00"; "10:00 AM to 11:00 AM" -> start "10:00", end "11:00"; "2:00 PM to 3:00 PM" -> start "14:00", end "15:00"; "3:00 PM to 5:00 PM" -> start "15:00", end "17:00").
 6. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse.
 
-Return ONLY raw JSON matching this schema, without any markdown formatting, explanations, or extra text:
+FEW-SHOT EXAMPLES:
+If a timetable contains:
+- Monday: "Subject A (Prof. X)" at 9:00 AM - 10:00 AM, "Subject B (Room 101)" at 10:00 AM - 11:00 AM, and "Subject C" at 2:00 PM - 3:00 PM (after a Lunch break)
+- Wednesday: "Subject A (Prof. X)" at 11:00 AM - 12:00 Noon (a different time!)
+
+The expected parsed JSON output is:
 {
   "subjects": [
     {
-      "name": "Industrial Engineering",
-      "confidence": 0.95,
-      "days": [1, 2, 5],
+      "name": "Subject A",
+      "confidence": 0.98,
+      "days": [1, 3],
       "timings": {
-        "1": {"start": "10:00", "end": "11:00"},
-        "2": {"start": "10:00", "end": "11:00"},
-        "5": {"start": "12:00", "end": "13:00"}
+        "1": {"start": "09:00", "end": "10:00"},
+        "3": {"start": "11:00", "end": "12:00"}
+      }
+    },
+    {
+      "name": "Subject B",
+      "confidence": 0.98,
+      "days": [1],
+      "timings": {
+        "1": {"start": "10:00", "end": "11:00"}
+      }
+    },
+    {
+      "name": "Subject C",
+      "confidence": 0.98,
+      "days": [1],
+      "timings": {
+        "1": {"start": "14:00", "end": "15:00"}
       }
     }
   ]
-}`
+}
+
+Return ONLY raw JSON matching this schema, without any markdown formatting, explanations, or extra text:`
           },
           {
             role: "user",
