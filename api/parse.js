@@ -82,7 +82,8 @@ Return ONLY raw JSON matching this schema, without any markdown formatting, expl
           }
         ],
         temperature: 0.1,
-        max_tokens: 2048
+        max_tokens: 2048,
+        response_format: { type: "json_object" }
       };
     } else {
       // Use Llama 3.1 Text model to parse PDF text
@@ -121,7 +122,8 @@ Return ONLY raw JSON matching this schema, without any markdown formatting, expl
           }
         ],
         temperature: 0.1,
-        max_tokens: 2048
+        max_tokens: 2048,
+        response_format: { type: "json_object" }
       };
     }
 
