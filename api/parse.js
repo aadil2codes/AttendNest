@@ -35,32 +35,36 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are an expert timetable parser. Extract all subjects.
-For every subject return:
-- subject name
-- confidence score (a float between 0.0 and 1.0 based on how clear the text was for this subject)
-- class days (array of numbers)
-- timings (object mapping day number to start/end times in 24h format HH:MM)
+            content: `You are an expert timetable parser. Your task is to analyze OCR text extracted from a timetable image or PDF and return a structured JSON array of all unique subjects.
 
-Day mapping:
-Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0
+CRITICAL INSTRUCTIONS:
+1. GROUP BY SUBJECT: Each subject must appear EXACTLY ONCE in the returned list. Do not create separate entries for the same subject taught on different days.
+2. COMBINE DAYS AND TIMINGS: If a subject is taught multiple times a week (e.g. Applied Chemistry on Monday and Thursday), compile ALL those days into the "days" array, and map each day to its specific start and end time inside the "timings" object.
+3. ACCURATE DAY MAPPING:
+   - Monday = 1
+   - Tuesday = 2
+   - Wednesday = 3
+   - Thursday = 4
+   - Friday = 5
+   - Saturday = 6
+   - Sunday = 0
+4. TIME FORMATTING: Convert all start and end times to 24-hour HH:MM format (e.g., "1:30 PM" -> "13:30", "10:00 - 11:00" -> start "10:00", end "11:00").
+5. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse based on text legibility.
 
-Return ONLY valid JSON matching this schema:
+Return ONLY raw JSON matching this schema, without any markdown formatting or extra explanation:
 {
   "subjects": [
     {
-      "name": "Mathematics",
+      "name": "Applied Chemistry",
       "confidence": 0.95,
-      "days": [1, 3, 5],
+      "days": [1, 4],
       "timings": {
-        "1": {"start": "09:00", "end": "10:00"},
-        "3": {"start": "09:00", "end": "10:00"},
-        "5": {"start": "09:00", "end": "10:00"}
+        "1": {"start": "10:00", "end": "11:00"},
+        "4": {"start": "10:00", "end": "11:00"}
       }
     }
   ]
-}
-Make sure the timings object keys are strings ("1", "3", "5") matching the selected days. Do not include any explanation or markdown formatting in your response. Return raw JSON.`
+}`
           },
           {
             role: "user",
