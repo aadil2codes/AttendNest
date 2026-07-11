@@ -33,26 +33,27 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are an expert timetable parser. Your task is to analyze the uploaded timetable image, identify all unique subjects, their days of the week, and their timings.
+            content: `You are an expert timetable parser. Your task is to analyze the uploaded timetable image and return a structured JSON object containing a scratchpad and all unique subjects.
 
 CRITICAL INSTRUCTIONS:
-1. GROUP BY SUBJECT: Each subject must appear EXACTLY ONCE in the returned "subjects" list.
-2. COMBINE DAYS AND TIMINGS: If a subject is taught multiple times a week (e.g. Applied Chemistry is taught Monday 10:00-11:00 and Thursday 10:00-11:00), compile all those days into the "days" array: [1, 4], and map each day to its specific time inside the "timings" object in 24-hour HH:MM format.
+1. CLEAN SUBJECT NAMES: Strip all teacher initials, room numbers, or abbreviations in parentheses from the subject name (e.g., "Industrial Engineering (GS)" becomes "Industrial Engineering", "Electronics Devices (CT)" becomes "Electronics Devices", "Open Elective (DKR)" becomes "Open Elective"). The name must be the clean, full name of the subject.
+2. STRICT GROUPING BY NAME: Each subject must appear EXACTLY ONCE in the returned "subjects" list. Even if a subject has different timings on different days (e.g. Industrial Engineering runs Mon/Tue at 10:00-11:00, and Fri at 12:00-13:00), you MUST compile them into a single subject entry in the array. Group all days in the "days" array: [1, 2, 5], and map each day to its specific timing in the "timings" object.
 3. DAY MAPPING: Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6, Sunday = 0.
-4. TIME MAPPING: Convert all timings to 24-hour HH:MM format (e.g. "12:30 - 1:30" -> start "12:30", end "13:30"; "1:30 - 2:30" -> start "13:30", end "14:30").
+4. TIME MAPPING: Convert all timings to 24-hour HH:MM format (e.g. "12:00 Noon to 1:00 PM" -> start "12:00", end "13:00"; "10:00 AM to 11:00 AM" -> start "10:00", end "11:00").
 5. CONFIDENCE SCORE: Output a confidence float between 0.0 and 1.0 reflecting your certainty of the parse.
 
 Return ONLY raw JSON matching this schema, without any markdown formatting or extra text:
 {
-  "scratchpad": "Analysis: List each subject and the days/times you see them in the image...",
+  "scratchpad": "Analysis: List each subject you see, clean its name, and list all its occurrences across days and times...",
   "subjects": [
     {
-      "name": "Applied Chemistry",
+      "name": "Industrial Engineering",
       "confidence": 0.95,
-      "days": [1, 4],
+      "days": [1, 2, 5],
       "timings": {
         "1": {"start": "10:00", "end": "11:00"},
-        "4": {"start": "10:00", "end": "11:00"}
+        "2": {"start": "10:00", "end": "11:00"},
+        "5": {"start": "12:00", "end": "13:00"}
       }
     }
   ]
